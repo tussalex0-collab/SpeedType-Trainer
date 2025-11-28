@@ -2,11 +2,9 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Typing Speed Challenge V5</title>
+    <title data-translate-key="app_title">Typing Speed Challenge V7</title>
     <style>
-        /* ==================== */
         /* CSS Styling (Unverändert) */
-        /* ==================== */
         body {
             font-family: 'Consolas', monospace;
             display: flex;
@@ -55,7 +53,7 @@
             background-color: #282c34;
             min-height: 120px;
             white-space: pre-wrap;
-            user-select: none; /* Verhindert Auswahl/Kopieren des Zieltextes */
+            user-select: none;
         }
 
         /* Hervorhebung für den aktuellen Buchstaben */
@@ -140,36 +138,46 @@
 <body>
 
     <div id="container">
-        <h1>🚀 Type Challenge</h1>
+        <h1 data-translate-key="title">🚀 Type Challenge</h1>
         
         <div id="options-bar">
             <div class="option-group">
-                <label for="difficulty">Textkategorie:</label>
+                <label data-translate-key="language_label" for="language">Sprache:</label>
+                <select id="language" onchange="loadLanguage(this.value)">
+                    <option value="de">Deutsch</option>
+                    <option value="en">English</option>
+                    <option value="fr">Français</option>
+                    <option value="es">Español</option>
+                    <option value="it">Italiano</option> </select>
+            </div>
+            
+            <div class="option-group">
+                <label data-translate-key="category_label" for="difficulty">Textkategorie:</label>
                 <select id="difficulty" onchange="startTest()">
-                    <option value="short">Kurz & Leicht</option>
-                    <option value="long">Lang & Komplex</option>
-                    <option value="tech">Technisch/Code</option>
+                    <option value="short" data-translate-key="category_short">Kurz & Leicht</option>
+                    <option value="long" data-translate-key="category_long">Lang & Komplex</option>
+                    <option value="tech" data-translate-key="category_tech">Technisch/Code</option>
                 </select>
             </div>
-            <div id="info-message" style="color: #98c379;">Bereit für den Start!</div>
+            <div id="info-message" style="color: #98c379;" data-translate-key="info_ready">Bereit für den Start!</div>
         </div>
 
         <div id="text-to-type"></div>
 
-        <input type="text" id="input-field" placeholder="Beginne hier mit dem Tippen..." autofocus disabled>
+        <input type="text" id="input-field" data-translate-key="placeholder" placeholder="Beginne hier mit dem Tippen..." autofocus disabled>
 
         <div id="results">
-            <div class="stat">WPM<span id="wpm">0</span></div>
-            <div class="stat">Genauigkeit<span id="accuracy">0%</span></div>
-            <div class="stat">Zeit<span id="time">0.00s</span></div>
+            <div class="stat" data-translate-key="wpm">WPM<span id="wpm">0</span></div>
+            <div class="stat" data-translate-key="accuracy">Genauigkeit<span id="accuracy">0%</span></div>
+            <div class="stat" data-translate-key="time">Zeit<span id="time">0.00s</span></div>
         </div>
         
-        <button onclick="startTest()">Neuer Text / Neustart</button>
+        <button onclick="startTest()" data-translate-key="new_text">Neuer Text / Neustart</button>
     </div>
 
     <script>
         /* ==================== */
-        /* JavaScript Logic (Anti-Copy-Paste-Implementierung) */
+        /* JavaScript Logic (V7 - 5 Sprachen) */
         /* ==================== */
         const textToTypeElement = document.getElementById('text-to-type');
         const inputField = document.getElementById('input-field');
@@ -177,28 +185,125 @@
         const accuracyDisplay = document.getElementById('accuracy');
         const timeDisplay = document.getElementById('time');
         const difficultySelect = document.getElementById('difficulty');
+        const languageSelect = document.getElementById('language');
         const infoMessage = document.getElementById('info-message');
 
-        const sampleTexts = {
-            short: [
-                "HTML, CSS und JavaScript bilden das Fundament des modernen World Wide Web. HTML für die Struktur, CSS für das Design und JavaScript für die Interaktivität und Logik.",
-                "Die beste Methode, um seine Tippgeschwindigkeit zu verbessern, ist die tägliche Konzentration auf genaue Eingaben und das Vermeiden von Fehlern.",
-                "Der Algorithmus berechnete die optimale Route in wenigen Millisekunden und präsentierte das Ergebnis auf dem Bildschirm.",
-                "Kaffee am Morgen ist für viele Programmierer ein unverzichtbarer Bestandteil des Arbeitsalltags. Er hilft, den Fokus zu schärfen.",
-                "Ein asynchroner Callback in Node.js ermöglicht die non-blocking I/O-Operation."
-            ],
-            long: [
-                "Programmieren lernen ist wie eine neue Sprache zu lernen. Es erfordert Geduld, Übung und das Verstehen von grundlegenden Regeln, um am Ende komplexe Anwendungen erstellen zu können, welche die Nutzer begeistern sollen.",
-                "Obwohl die Herausforderung, eine flüssige und fehlerfreie Tippgeschwindigkeit zu entwickeln, oft als schwierig empfunden wird, ist es mit konsistenter täglicher Übung und der richtigen Fokussierung auf die Genauigkeit erreichbar und führt zu einer signifikanten Steigerung der Produktivität bei der täglichen Computerarbeit.",
-                "Die kontinuierliche Integration und kontinuierliche Bereitstellung sind moderne Softwareentwicklungspraktiken, die darauf abzielen, den Prozess der Freigabe neuer Software-Updates zu beschleunigen und gleichzeitig die Fehlerquote zu minimieren, was für große Teams unerlässlich ist.",
-                "Das Jahr 2024 brachte viele technologische Fortschritte. Die Aktienkurse stiegen um 15.3% und die neue Spezifikation 802.11ax wurde zum Standard erklärt. Die Forschung konzentriert sich nun auf Quantencomputing und KI-Modelle der nächsten Generation."
-            ],
-            tech: [
-                "function greet(name) { console.log(`Hello, ${name}!`); } greet('World'); // Die Funktion wird aufgerufen.",
-                "if (x === true && y != 0) { return x / (y * 2); } else { throw new Error('Invalid input'); }",
-                "Die Subnetzmaske 255.255.255.0 erlaubt 254 Host-Adressen. Die IP-Adresse 192.168.1.1 ist das typische Standard-Gateway.",
-                "import React from 'react'; export default function App() { return <h1>Web-Entwicklung</h1>; }"
-            ]
+        let currentLang = 'en'; 
+
+        // --- 1. Übersetzungsobjekt (JSON) ---
+        const translations = {
+            'de': {
+                'app_title': 'Tipp-Geschwindigkeits-Trainer',
+                'title': '🚀 Type Challenge',
+                'language_label': 'Sprache:',
+                'category_label': 'Textkategorie:',
+                'category_short': 'Kurz & Leicht',
+                'category_long': 'Lang & Komplex',
+                'category_tech': 'Technisch/Code',
+                'wpm': 'WPM', 'accuracy': 'Genauigkeit', 'time': 'Zeit',
+                'placeholder': 'Beginne hier mit dem Tippen...',
+                'new_text': 'Neuer Text / Neustart',
+                'info_ready': 'Bereit für den Start!',
+                'info_loaded': (category) => `Text (${category}) geladen.`,
+                'info_finished': 'Geschafft! Klicke auf "Neustart" für eine neue Challenge.',
+                'alert_paste_blocked': '❌ Einfügen (Paste) ist im Test nicht erlaubt!',
+                'alert_finished': (wpm, accuracy, mistakes) => `🎉 Test beendet!\n\nDein Ergebnis:\n  WPM: ${wpm}\n  Genauigkeit: ${accuracy}\n  Gemachte Fehler: ${mistakes}`,
+                'sampleTexts': {
+                    short: ["HTML, CSS und JavaScript bilden das Fundament des modernen World Wide Web. HTML für die Struktur, CSS für das Design und JavaScript für die Interaktivität und Logik.", "Die beste Methode, um seine Tippgeschwindigkeit zu verbessern, ist die tägliche Konzentration auf genaue Eingaben und das Vermeiden von Fehlern."],
+                    long: ["Programmieren lernen ist wie eine neue Sprache zu lernen. Es erfordert Geduld, Übung und das Verstehen von grundlegenden Regeln, um am Ende komplexe Anwendungen erstellen zu können, welche die Nutzer begeistern sollen.", "Die kontinuierliche Integration und kontinuierliche Bereitstellung sind moderne Softwareentwicklungspraktiken, die darauf abzielen, den Prozess der Freigabe neuer Software-Updates zu beschleunigen."],
+                    tech: ["function greet(name) { console.log(`Hello, ${name}!`); } greet('World'); // Die Funktion wird aufgerufen.", "if (x === true && y != 0) { return x / (y * 2); } else { throw new Error('Invalid input'); }"]
+                }
+            },
+            'en': {
+                'app_title': 'Typing Speed Trainer',
+                'title': '🚀 Type Challenge',
+                'language_label': 'Language:',
+                'category_label': 'Text Category:',
+                'category_short': 'Short & Easy',
+                'category_long': 'Long & Complex',
+                'category_tech': 'Technical/Code',
+                'wpm': 'WPM', 'accuracy': 'Accuracy', 'time': 'Time',
+                'placeholder': 'Start typing here...',
+                'new_text': 'New Text / Restart',
+                'info_ready': 'Ready to start!',
+                'info_loaded': (category) => `Text (${category}) loaded.`,
+                'info_finished': 'Done! Click "Restart" for a new challenge.',
+                'alert_paste_blocked': '❌ Pasting is not allowed in the test!',
+                'alert_finished': (wpm, accuracy, mistakes) => `🎉 Test finished!\n\nYour result:\n  WPM: ${wpm}\n  Accuracy: ${accuracy}\n  Mistakes: ${mistakes}`,
+                'sampleTexts': {
+                    short: ["HTML, CSS, and JavaScript form the foundation of the modern World Wide Web. HTML for structure, CSS for design, and JavaScript for interactivity and logic.", "The best way to improve typing speed is daily focus on accuracy and avoiding mistakes, rather than just focusing on pure speed."],
+                    long: ["Learning to program is like learning a new language. It requires patience, practice, and understanding basic rules to eventually build complex applications that users will love.", "Continuous integration and continuous delivery are modern software development practices aiming to accelerate the release process while minimizing the error rate, which is essential for large teams."],
+                    tech: ["function greet(name) { console.log(`Hello, ${name}!`); } greet('World'); // The function is called.", "if (x === true && y != 0) { return x / (y * 2); } else { throw new Error('Invalid input'); }"]
+                }
+            },
+            'fr': {
+                'app_title': 'Entraîneur de Vitesse de Frappe',
+                'title': '🚀 Défi de Dactylographie',
+                'language_label': 'Langue:',
+                'category_label': 'Catégorie de Texte:',
+                'category_short': 'Court & Facile',
+                'category_long': 'Long & Complexe',
+                'category_tech': 'Technique/Code',
+                'wpm': 'MPM', 'accuracy': 'Précision', 'time': 'Temps',
+                'placeholder': 'Commencez à taper ici...',
+                'new_text': 'Nouveau Texte / Redémarrer',
+                'info_ready': 'Prêt à commencer !',
+                'info_loaded': (category) => `Texte (${category}) chargé.`,
+                'info_finished': 'Terminé ! Cliquez sur "Redémarrer" pour un nouveau défi.',
+                'alert_paste_blocked': '❌ Le collage (Coller) n\'est pas autorisé dans le test !',
+                'alert_finished': (wpm, accuracy, mistakes) => `🎉 Test terminé !\n\nVotre résultat:\n  MPM: ${wpm}\n  Précision: ${accuracy}\n  Erreurs commises: ${mistakes}`,
+                'sampleTexts': {
+                    short: ["HTML, CSS et JavaScript forment la base du World Wide Web moderne. HTML pour la structure, CSS pour le design et JavaScript pour l'interactivité et la logique.", "La meilleure façon d'améliorer la vitesse de frappe est de se concentrer quotidiennement sur la précision et d'éviter les erreurs, plutôt que sur la vitesse pure."],
+                    long: ["Apprendre à programmer, c'est comme apprendre une nouvelle langue. Cela demande de la patience, de la pratique et la compréhension des règles de base pour pouvoir construire des applications complexes.", "L'intégration et la livraison continues sont des pratiques de développement logiciel modernes visant à accélérer le processus de publication tout en minimisant le taux d'erreur, ce qui est essentiel pour les grandes équipes."],
+                    tech: ["function saluer(nom) { console.log(`Bonjour, ${nom} !`); } saluer('Monde'); // La fonction est appelée.", "if (x === vrai && y != 0) { return x / (y * 2); } else { throw new Error('Entrée invalide'); }"]
+                }
+            },
+            'es': {
+                'app_title': 'Entrenador de Velocidad de Escritura',
+                'title': '🚀 Desafío de Tipografía',
+                'language_label': 'Idioma:',
+                'category_label': 'Categoría de Texto:',
+                'category_short': 'Corto y Fácil',
+                'category_long': 'Largo y Complejo',
+                'category_tech': 'Técnico/Código',
+                'wpm': 'PPM', 'accuracy': 'Precisión', 'time': 'Tiempo',
+                'placeholder': 'Empiece a escribir aquí...',
+                'new_text': 'Nuevo Texto / Reiniciar',
+                'info_ready': '¡Listo para empezar!',
+                'info_loaded': (category) => `Texto (${category}) cargado.`,
+                'info_finished': '¡Terminado! Haz clic en "Reiniciar" para un nuevo desafío.',
+                'alert_paste_blocked': '❌ ¡Pegar no está permitido en la prueba!',
+                'alert_finished': (wpm, accuracy, mistakes) => `🎉 ¡Prueba terminada!\n\nTu resultado:\n  PPM: ${wpm}\n  Precisión: ${accuracy}\n  Errores cometidos: ${mistakes}`,
+                'sampleTexts': {
+                    short: ["HTML, CSS y JavaScript forman la base de la World Wide Web moderna. HTML para la estructura, CSS para el diseño y JavaScript para la interactividad y lógica.", "La mejor manera de mejorar la velocidad de escritura es la concentración diaria en la precisión y evitar errores, en lugar de centrarse solo en la velocidad pura."],
+                    long: ["Aprender a programar es como aprender un nuevo idioma. Requiere paciencia, práctica y comprensión de las reglas básicas para construir aplicaciones complejas que gustarán a los usuarios.", "La integración continua y la entrega continua son prácticas modernas de desarrollo de software que buscan acelerar el proceso de lanzamiento de software minimizando la tasa de error, esencial para grandes equipos."],
+                    tech: ["function saludar(nombre) { console.log(`Hola, ${nombre}!`); } saludar('Mundo'); // La función es llamada.", "if (x === verdadero && y != 0) { return x / (y * 2); } else { throw new Error('Entrada inválida'); }"]
+                }
+            },
+            // NEUE SPRACHE: ITALIENISCH (it)
+            'it': {
+                'app_title': 'Trainer di Velocità di Battitura',
+                'title': '🚀 Sfida di Battitura',
+                'language_label': 'Lingua:',
+                'category_label': 'Categoria Testo:',
+                'category_short': 'Breve e Facile',
+                'category_long': 'Lungo e Complesso',
+                'category_tech': 'Tecnico/Codice',
+                'wpm': 'PPM', 'accuracy': 'Precisione', 'time': 'Tempo',
+                'placeholder': 'Inizia a digitare qui...',
+                'new_text': 'Nuovo Testo / Riavvia',
+                'info_ready': 'Pronto per iniziare!',
+                'info_loaded': (category) => `Testo (${category}) caricato.`,
+                'info_finished': 'Fatto! Clicca "Riavvia" per una nuova sfida.',
+                'alert_paste_blocked': '❌ Incollare non è consentito nel test!',
+                'alert_finished': (wpm, accuracy, mistakes) => `🎉 Test terminato!\n\nIl tuo risultato:\n  PPM: ${wpm}\n  Precisione: ${accuracy}\n  Errori commessi: ${mistakes}`,
+                'sampleTexts': {
+                    short: ["HTML, CSS e JavaScript costituiscono le fondamenta del World Wide Web moderno. HTML per la struttura, CSS per il design e JavaScript per l'interattività e la logica.", "Il modo migliore per migliorare la velocità di battitura è la concentrazione quotidiana sulla precisione e l'evitare errori, piuttosto che concentrarsi sulla velocità pura."],
+                    long: ["Imparare a programmare è come imparare una nuova lingua. Richiede pazienza, pratica e comprensione delle regole di base per costruire applicazioni complesse che piaceranno agli utenti.", "L'integrazione continua e la consegna continua sono pratiche di sviluppo software moderno volte ad accelerare il processo di rilascio minimizzando il tasso di errore, essenziale per i grandi team."],
+                    tech: ["function saluta(nome) { console.log(`Ciao, ${nome}!`); } saluta('Mondo'); // La funzione viene chiamata.", "if (x === vero && y != 0) { return x / (y * 2); } else { throw new Error('Input non valido'); }"]
+                }
+            }
+            // HIER KÖNNEN DIE RESTLICHEN SPRACHEN FOLGEN
         };
 
         let currentText = '';
@@ -208,37 +313,49 @@
         let totalTypedCharacters = 0;   
         let errorsMadeCount = 0;        
         let isRunning = false;
-        
-        // --- NEUE FUNKTION: Copy & Paste blockieren ---
-        inputField.addEventListener('paste', (e) => {
-            e.preventDefault();
-            infoMessage.textContent = '❌ Einfügen (Paste) ist im Test nicht erlaubt!';
-            setTimeout(() => {
-                infoMessage.textContent = `Text (${difficultySelect.options[difficultySelect.selectedIndex].text}) geladen.`;
-            }, 1500);
-        });
 
-        inputField.addEventListener('contextmenu', (e) => {
-            e.preventDefault(); // Rechte Maustaste/Kontextmenü blockieren
-        });
-        
-        // Blockiert Strg+V, Cmd+V
-        inputField.addEventListener('keydown', (e) => {
-             // 86 ist der KeyCode für 'V'
-            if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
-                e.preventDefault();
-                infoMessage.textContent = '❌ Einfügen (Strg/Cmd + V) ist nicht erlaubt!';
-                setTimeout(() => {
-                    infoMessage.textContent = `Text (${difficultySelect.options[difficultySelect.selectedIndex].text}) geladen.`;
-                }, 1500);
+        // --- Automatisches Spracherkennung und Laden ---
+
+        function getPreferredLanguage() {
+            const browserLang = (navigator.language || navigator.userLanguage).substring(0, 2);
+            if (translations[browserLang]) {
+                return browserLang;
             }
-        });
-        
-        // --- Setup und Start (Unverändert) ---
+            return 'en'; 
+        }
 
+        function loadLanguage(langCode) {
+            currentLang = langCode;
+            const langData = translations[langCode] || translations['en']; 
+            
+            document.querySelectorAll('[data-translate-key]').forEach(element => {
+                const key = element.getAttribute('data-translate-key');
+                const translation = langData[key];
+
+                if (translation) {
+                    if (element.tagName === 'INPUT' && element.hasAttribute('placeholder')) {
+                        element.setAttribute('placeholder', translation);
+                    } else if (element.tagName === 'TITLE') {
+                        document.title = translation;
+                    } else if (element.tagName === 'OPTION') {
+                        element.textContent = translation;
+                    } else if (typeof translation === 'string') {
+                        element.textContent = translation;
+                    }
+                }
+            });
+
+            languageSelect.value = langCode;
+            startTest();
+        }
+
+        // --- Setup und Start ---
+        
         function loadText() {
             const difficulty = difficultySelect.value;
-            const texts = sampleTexts[difficulty];
+            const langData = translations[currentLang] || translations['en'];
+            const texts = langData.sampleTexts[difficulty];
+            
             currentText = texts[Math.floor(Math.random() * texts.length)];
             textToTypeElement.innerHTML = '';
 
@@ -249,7 +366,8 @@
             });
             textToTypeElement.children[0].classList.add('current');
             
-            infoMessage.textContent = `Text (${difficultySelect.options[difficultySelect.selectedIndex].text}) geladen.`;
+            const categoryText = difficultySelect.options[difficultySelect.selectedIndex].textContent;
+            infoMessage.textContent = langData.info_loaded(categoryText);
         }
 
         function startTest() {
@@ -272,7 +390,32 @@
             loadText(); 
         }
 
-        // --- Hauptlogik beim Tippen (Unverändert) ---
+        // --- Anti-Copy-Paste-Schutz (Angepasst für i18n) ---
+        inputField.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const langData = translations[currentLang] || translations['en'];
+            infoMessage.textContent = langData.alert_paste_blocked;
+            setTimeout(() => {
+                infoMessage.textContent = langData.info_loaded(difficultySelect.options[difficultySelect.selectedIndex].textContent);
+            }, 1500);
+        });
+
+        inputField.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
+        
+        inputField.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+                e.preventDefault();
+                const langData = translations[currentLang] || translations['en'];
+                infoMessage.textContent = langData.alert_paste_blocked;
+                setTimeout(() => {
+                    infoMessage.textContent = langData.info_loaded(difficultySelect.options[difficultySelect.selectedIndex].textContent);
+                }, 1500);
+            }
+        });
+        
+        // --- Hauptlogik beim Tippen ---
 
         inputField.addEventListener('input', (e) => {
             if (!isRunning) {
@@ -287,22 +430,16 @@
             const targetChars = textToTypeElement.children;
             const newLength = input.length;
             
-            // --- BUG FIX LOGIC ---
-            
-            // 1. Fehler zählen (NUR wenn ein Zeichen GETIPPT wird)
             if (newLength > totalTypedCharacters) {
                 const lastTypedIndex = newLength - 1;
                 if (input[lastTypedIndex] !== currentText[lastTypedIndex]) {
-                    errorsMadeCount++; // Fehler wurde gemacht
+                    errorsMadeCount++; 
                 }
             }
             
-            // 2. Gesamtzeichen aktualisieren (für die Länge)
             totalTypedCharacters = newLength; 
-            correctTypedCharacters = 0; // Neu zählen, wie viele Zeichen aktuell korrekt sind
+            correctTypedCharacters = 0; 
 
-            // --- Färbung und Korrektheitsprüfung ---
-            
             for (let i = 0; i < currentText.length; i++) {
                 const targetChar = currentText[i];
                 const typedChar = input[i];
@@ -311,39 +448,35 @@
                 charElement.classList.remove('current', 'correct', 'incorrect');
                 
                 if (i < newLength) {
-                    // Zeichen wurde getippt
                     if (typedChar === targetChar) {
                         charElement.classList.add('correct');
-                        correctTypedCharacters++; // Zählt die aktuell korrekten Zeichen
+                        correctTypedCharacters++; 
                     } else {
                         charElement.classList.add('incorrect');
                     }
                 } else if (i === newLength && i < currentText.length) {
-                    // Nächstes zu tippendes Zeichen
                     charElement.classList.add('current');
                 }
             }
             
             updateMetrics(false); 
 
-            // --- Test beenden ---
             if (newLength === currentText.length) {
                 inputField.disabled = true;
                 clearInterval(timer);
                 isRunning = false;
                 
-                infoMessage.textContent = 'Geschafft! Klicke auf "Neustart" für eine neue Challenge.';
+                const langData = translations[currentLang] || translations['en'];
+                infoMessage.textContent = langData.info_finished;
 
                 const finalAccuracy = accuracyDisplay.textContent;
                 const finalWPM = wpmDisplay.textContent;
 
-                alert(`🎉 Test beendet!\n\nDein Ergebnis:\n  WPM: ${finalWPM}\n  Genauigkeit: ${finalAccuracy}\n  Gemachte Fehler: ${errorsMadeCount}`);
+                alert(langData.alert_finished(finalWPM, finalAccuracy, errorsMadeCount));
             }
         });
 
-
-        // --- Metriken Berechnung (Unverändert) ---
-
+        // --- Metriken Berechnung ---
         function updateMetrics(onlyTime = false) {
             const timeElapsedInSeconds = (Date.now() - startTime) / 1000;
             
@@ -368,9 +501,12 @@
                  accuracyDisplay.textContent = '0%';
             }
         }
-
-        // Starte den Test beim Laden der Seite
-        startTest();
+        
+        // --- Automatischer Start bei Seitenaufruf ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const preferredLang = getPreferredLanguage();
+            loadLanguage(preferredLang); 
+        });
     </script>
 </body>
 </html>
