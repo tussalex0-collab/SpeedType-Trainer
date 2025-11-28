@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Typing Speed Challenge V5</title>
+    <style>
+        /* ==================== */
+        /* CSS Styling (Unverändert) */
+        /* ==================== */
+        body {
+            font-family: 'Consolas', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #282c34;
+            color: #abb2bf;
+        }
+
+        #container {
+            width: 80%;
+            max-width: 900px;
+            padding: 40px;
+            background-color: #3e4451;
+            border-radius: 10px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.7);
+        }
+
+        /* Optionen / Einstellungsbereich */
+        #options-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            border-bottom: 2px solid #61afef;
+        }
+
+        .option-group label {
+            margin-right: 10px;
+            font-size: 1em;
+            color: #61afef;
+        }
+
+        /* Das Textfeld, das getippt werden muss */
+        #text-to-type {
+            font-size: 1.6em;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #61afef;
+            border-radius: 5px;
+            background-color: #282c34;
+            min-height: 120px;
+            white-space: pre-wrap;
+            user-select: none; /* Verhindert Auswahl/Kopieren des Zieltextes */
+        }
+
+        /* Hervorhebung für den aktuellen Buchstaben */
+        .current {
+            background-color: #c678dd;
+            color: #282c34;
+            border-radius: 2px;
+            padding: 1px 0;
+            display: inline-block;
+            transform: scale(1.05);
+        }
+
+        /* Korrekt getippter Buchstabe */
+        .correct {
+            color: #98c379;
+        }
+
+        /* Falsch getippter Buchstabe */
+        .incorrect {
+            color: #e06c75;
+            text-decoration: underline wavy #e06c75;
+        }
+
+        /* Das Eingabefeld */
+        #input-field {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.3em;
+            border: 2px solid #56b6c2;
+            border-radius: 5px;
+            box-sizing: border-box;
+            background-color: #282c34;
+            color: #ffffff;
+            margin-bottom: 20px;
+            transition: border-color 0.3s;
+        }
+        #input-field:focus {
+            border-color: #c678dd;
+            outline: none;
+        }
+        
+        /* Status- und Ergebnis-Anzeige */
+        #results {
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+            font-size: 1.3em;
+            margin-top: 20px;
+            padding: 15px 10px;
+            border-top: 2px solid #61afef;
+        }
+        .stat {
+            flex-grow: 1;
+        }
+        .stat span {
+            display: block;
+            font-size: 2.2em;
+            font-weight: bold;
+            color: #e6c07b;
+            transition: color 0.3s;
+        }
+
+        button {
+            background-color: #61afef;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1.2em;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        button:hover {
+            background-color: #56b6c2;
+            transform: translateY(-1px);
+        }
+        button:active {
+            transform: translateY(1px);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="container">
+        <h1>🚀 Type Challenge</h1>
+        
+        <div id="options-bar">
+            <div class="option-group">
+                <label for="difficulty">Textkategorie:</label>
+                <select id="difficulty" onchange="startTest()">
+                    <option value="short">Kurz & Leicht</option>
+                    <option value="long">Lang & Komplex</option>
+                    <option value="tech">Technisch/Code</option>
+                </select>
+            </div>
+            <div id="info-message" style="color: #98c379;">Bereit für den Start!</div>
+        </div>
+
+        <div id="text-to-type"></div>
+
+        <input type="text" id="input-field" placeholder="Beginne hier mit dem Tippen..." autofocus disabled>
+
+        <div id="results">
+            <div class="stat">WPM<span id="wpm">0</span></div>
+            <div class="stat">Genauigkeit<span id="accuracy">0%</span></div>
+            <div class="stat">Zeit<span id="time">0.00s</span></div>
+        </div>
+        
+        <button onclick="startTest()">Neuer Text / Neustart</button>
+    </div>
+
+    <script>
+        /* ==================== */
+        /* JavaScript Logic (Anti-Copy-Paste-Implementierung) */
+        /* ==================== */
+        const textToTypeElement = document.getElementById('text-to-type');
+        const inputField = document.getElementById('input-field');
+        const wpmDisplay = document.getElementById('wpm');
+        const accuracyDisplay = document.getElementById('accuracy');
+        const timeDisplay = document.getElementById('time');
+        const difficultySelect = document.getElementById('difficulty');
+        const infoMessage = document.getElementById('info-message');
+
+        const sampleTexts = {
+            short: [
+                "HTML, CSS und JavaScript bilden das Fundament des modernen World Wide Web. HTML für die Struktur, CSS für das Design und JavaScript für die Interaktivität und Logik.",
+                "Die beste Methode, um seine Tippgeschwindigkeit zu verbessern, ist die tägliche Konzentration auf genaue Eingaben und das Vermeiden von Fehlern.",
+                "Der Algorithmus berechnete die optimale Route in wenigen Millisekunden und präsentierte das Ergebnis auf dem Bildschirm.",
+                "Kaffee am Morgen ist für viele Programmierer ein unverzichtbarer Bestandteil des Arbeitsalltags. Er hilft, den Fokus zu schärfen.",
+                "Ein asynchroner Callback in Node.js ermöglicht die non-blocking I/O-Operation."
+            ],
+            long: [
+                "Programmieren lernen ist wie eine neue Sprache zu lernen. Es erfordert Geduld, Übung und das Verstehen von grundlegenden Regeln, um am Ende komplexe Anwendungen erstellen zu können, welche die Nutzer begeistern sollen.",
+                "Obwohl die Herausforderung, eine flüssige und fehlerfreie Tippgeschwindigkeit zu entwickeln, oft als schwierig empfunden wird, ist es mit konsistenter täglicher Übung und der richtigen Fokussierung auf die Genauigkeit erreichbar und führt zu einer signifikanten Steigerung der Produktivität bei der täglichen Computerarbeit.",
+                "Die kontinuierliche Integration und kontinuierliche Bereitstellung sind moderne Softwareentwicklungspraktiken, die darauf abzielen, den Prozess der Freigabe neuer Software-Updates zu beschleunigen und gleichzeitig die Fehlerquote zu minimieren, was für große Teams unerlässlich ist.",
+                "Das Jahr 2024 brachte viele technologische Fortschritte. Die Aktienkurse stiegen um 15.3% und die neue Spezifikation 802.11ax wurde zum Standard erklärt. Die Forschung konzentriert sich nun auf Quantencomputing und KI-Modelle der nächsten Generation."
+            ],
+            tech: [
+                "function greet(name) { console.log(`Hello, ${name}!`); } greet('World'); // Die Funktion wird aufgerufen.",
+                "if (x === true && y != 0) { return x / (y * 2); } else { throw new Error('Invalid input'); }",
+                "Die Subnetzmaske 255.255.255.0 erlaubt 254 Host-Adressen. Die IP-Adresse 192.168.1.1 ist das typische Standard-Gateway.",
+                "import React from 'react'; export default function App() { return <h1>Web-Entwicklung</h1>; }"
+            ]
+        };
+
+        let currentText = '';
+        let timer = null;
+        let startTime = 0;
+        let correctTypedCharacters = 0; 
+        let totalTypedCharacters = 0;   
+        let errorsMadeCount = 0;        
+        let isRunning = false;
+        
+        // --- NEUE FUNKTION: Copy & Paste blockieren ---
+        inputField.addEventListener('paste', (e) => {
+            e.preventDefault();
+            infoMessage.textContent = '❌ Einfügen (Paste) ist im Test nicht erlaubt!';
+            setTimeout(() => {
+                infoMessage.textContent = `Text (${difficultySelect.options[difficultySelect.selectedIndex].text}) geladen.`;
+            }, 1500);
+        });
+
+        inputField.addEventListener('contextmenu', (e) => {
+            e.preventDefault(); // Rechte Maustaste/Kontextmenü blockieren
+        });
+        
+        // Blockiert Strg+V, Cmd+V
+        inputField.addEventListener('keydown', (e) => {
+             // 86 ist der KeyCode für 'V'
+            if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+                e.preventDefault();
+                infoMessage.textContent = '❌ Einfügen (Strg/Cmd + V) ist nicht erlaubt!';
+                setTimeout(() => {
+                    infoMessage.textContent = `Text (${difficultySelect.options[difficultySelect.selectedIndex].text}) geladen.`;
+                }, 1500);
+            }
+        });
+        
+        // --- Setup und Start (Unverändert) ---
+
+        function loadText() {
+            const difficulty = difficultySelect.value;
+            const texts = sampleTexts[difficulty];
+            currentText = texts[Math.floor(Math.random() * texts.length)];
+            textToTypeElement.innerHTML = '';
+
+            currentText.split('').forEach((char) => {
+                const charSpan = document.createElement('span');
+                charSpan.textContent = char;
+                textToTypeElement.appendChild(charSpan);
+            });
+            textToTypeElement.children[0].classList.add('current');
+            
+            infoMessage.textContent = `Text (${difficultySelect.options[difficultySelect.selectedIndex].text}) geladen.`;
+        }
+
+        function startTest() {
+            clearInterval(timer);
+            isRunning = false;
+            startTime = 0;
+            
+            correctTypedCharacters = 0;
+            totalTypedCharacters = 0;
+            errorsMadeCount = 0;
+            
+            wpmDisplay.textContent = '0';
+            accuracyDisplay.textContent = '0%';
+            timeDisplay.textContent = '0.00s';
+            
+            inputField.value = '';
+            inputField.disabled = false;
+            inputField.focus();
+
+            loadText(); 
+        }
+
+        // --- Hauptlogik beim Tippen (Unverändert) ---
+
+        inputField.addEventListener('input', (e) => {
+            if (!isRunning) {
+                isRunning = true;
+                startTime = Date.now();
+                timer = setInterval(() => {
+                    if (isRunning) updateMetrics(true); 
+                }, 100); 
+            }
+
+            const input = inputField.value;
+            const targetChars = textToTypeElement.children;
+            const newLength = input.length;
+            
+            // --- BUG FIX LOGIC ---
+            
+            // 1. Fehler zählen (NUR wenn ein Zeichen GETIPPT wird)
+            if (newLength > totalTypedCharacters) {
+                const lastTypedIndex = newLength - 1;
+                if (input[lastTypedIndex] !== currentText[lastTypedIndex]) {
+                    errorsMadeCount++; // Fehler wurde gemacht
+                }
+            }
+            
+            // 2. Gesamtzeichen aktualisieren (für die Länge)
+            totalTypedCharacters = newLength; 
+            correctTypedCharacters = 0; // Neu zählen, wie viele Zeichen aktuell korrekt sind
+
+            // --- Färbung und Korrektheitsprüfung ---
+            
+            for (let i = 0; i < currentText.length; i++) {
+                const targetChar = currentText[i];
+                const typedChar = input[i];
+                const charElement = targetChars[i];
+
+                charElement.classList.remove('current', 'correct', 'incorrect');
+                
+                if (i < newLength) {
+                    // Zeichen wurde getippt
+                    if (typedChar === targetChar) {
+                        charElement.classList.add('correct');
+                        correctTypedCharacters++; // Zählt die aktuell korrekten Zeichen
+                    } else {
+                        charElement.classList.add('incorrect');
+                    }
+                } else if (i === newLength && i < currentText.length) {
+                    // Nächstes zu tippendes Zeichen
+                    charElement.classList.add('current');
+                }
+            }
+            
+            updateMetrics(false); 
+
+            // --- Test beenden ---
+            if (newLength === currentText.length) {
+                inputField.disabled = true;
+                clearInterval(timer);
+                isRunning = false;
+                
+                infoMessage.textContent = 'Geschafft! Klicke auf "Neustart" für eine neue Challenge.';
+
+                const finalAccuracy = accuracyDisplay.textContent;
+                const finalWPM = wpmDisplay.textContent;
+
+                alert(`🎉 Test beendet!\n\nDein Ergebnis:\n  WPM: ${finalWPM}\n  Genauigkeit: ${finalAccuracy}\n  Gemachte Fehler: ${errorsMadeCount}`);
+            }
+        });
+
+
+        // --- Metriken Berechnung (Unverändert) ---
+
+        function updateMetrics(onlyTime = false) {
+            const timeElapsedInSeconds = (Date.now() - startTime) / 1000;
+            
+            timeDisplay.textContent = `${timeElapsedInSeconds.toFixed(2)}s`;
+
+            if (onlyTime && !isRunning) return;
+
+            if (totalTypedCharacters > 0 && timeElapsedInSeconds > 0) {
+                const correctWords = correctTypedCharacters / 5;
+                const minutes = timeElapsedInSeconds / 60;
+                
+                const wpm = Math.round(correctWords / minutes);
+                
+                const currentAccuracy = totalTypedCharacters > 0 
+                    ? Math.round(((totalTypedCharacters - errorsMadeCount) / totalTypedCharacters) * 100)
+                    : 0;
+
+                wpmDisplay.textContent = wpm;
+                accuracyDisplay.textContent = `${Math.max(0, currentAccuracy)}%`; 
+            } else if (!onlyTime) {
+                 wpmDisplay.textContent = '0';
+                 accuracyDisplay.textContent = '0%';
+            }
+        }
+
+        // Starte den Test beim Laden der Seite
+        startTest();
+    </script>
+</body>
+</html>
