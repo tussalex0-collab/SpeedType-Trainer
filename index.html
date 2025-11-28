@@ -2,9 +2,11 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title data-translate-key="app_title">Typing Speed Challenge V7</title>
+    <title data-translate-key="app_title">Typing Speed Challenge V8</title>
     <style>
-        /* CSS Styling (Unverändert) */
+        /* ==================== */
+        /* CSS Styling */
+        /* ==================== */
         body {
             font-family: 'Consolas', monospace;
             display: flex;
@@ -54,6 +56,9 @@
             min-height: 120px;
             white-space: pre-wrap;
             user-select: none;
+            /* FIX: Zeilenumbruch-Problem vermeiden */
+            overflow-wrap: break-word; 
+            word-wrap: break-word;
         }
 
         /* Hervorhebung für den aktuellen Buchstaben */
@@ -104,6 +109,7 @@
             margin-top: 20px;
             padding: 15px 10px;
             border-top: 2px solid #61afef;
+            margin-bottom: 20px;
         }
         .stat {
             flex-grow: 1;
@@ -133,6 +139,49 @@
         button:active {
             transform: translateY(1px);
         }
+
+        /* ==================== */
+        /* Leaderboard Styling NEU */
+        /* ==================== */
+        #leaderboard-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px dashed #61afef;
+        }
+        #leaderboard-section h2 {
+            text-align: center;
+            color: #c678dd;
+            margin-bottom: 15px;
+        }
+        #leaderboard {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 1em;
+        }
+        #leaderboard th, #leaderboard td {
+            padding: 12px 15px;
+            text-align: center;
+            border-bottom: 1px solid #4b5263;
+        }
+        #leaderboard th {
+            background-color: #4b5263;
+            color: #abb2bf;
+            text-transform: uppercase;
+            font-size: 0.9em;
+        }
+        #leaderboard tr:nth-child(odd) {
+            background-color: #3e4451;
+        }
+        #leaderboard tr:hover {
+            background-color: #56b6c220;
+        }
+        .place-1, .place-2, .place-3 {
+            font-weight: bold;
+            color: #e6c07b; 
+        }
+        .place-1 td {
+            background-color: #e6c07b20;
+        }
     </style>
 </head>
 <body>
@@ -148,7 +197,8 @@
                     <option value="en">English</option>
                     <option value="fr">Français</option>
                     <option value="es">Español</option>
-                    <option value="it">Italiano</option> </select>
+                    <option value="it">Italiano</option>
+                </select>
             </div>
             
             <div class="option-group">
@@ -173,11 +223,18 @@
         </div>
         
         <button onclick="startTest()" data-translate-key="new_text">Neuer Text / Neustart</button>
+
+        <div id="leaderboard-section">
+            <h2 data-translate-key="leaderboard_title">🏆 Lokale Bestenliste (Top 10)</h2>
+            <table id="leaderboard">
+                </table>
+        </div>
+
     </div>
 
     <script>
         /* ==================== */
-        /* JavaScript Logic (V7 - 5 Sprachen) */
+        /* JavaScript Logic (V8 - Highscore & UX-Fixes) */
         /* ==================== */
         const textToTypeElement = document.getElementById('text-to-type');
         const inputField = document.getElementById('input-field');
@@ -187,10 +244,12 @@
         const difficultySelect = document.getElementById('difficulty');
         const languageSelect = document.getElementById('language');
         const infoMessage = document.getElementById('info-message');
+        const leaderboardTable = document.getElementById('leaderboard'); // NEU
 
         let currentLang = 'en'; 
+        let timer = null; // Für das WPM-Update-Intervall
 
-        // --- 1. Übersetzungsobjekt (JSON) ---
+        // Übersetzungsobjekt (JSON) - Wichtig: Neuer Key 'leaderboard_title' hinzugefügt!
         const translations = {
             'de': {
                 'app_title': 'Tipp-Geschwindigkeits-Trainer',
@@ -205,9 +264,10 @@
                 'new_text': 'Neuer Text / Neustart',
                 'info_ready': 'Bereit für den Start!',
                 'info_loaded': (category) => `Text (${category}) geladen.`,
-                'info_finished': 'Geschafft! Klicke auf "Neustart" für eine neue Challenge.',
+                'info_finished': '🎉 Test beendet! Dein Score wurde gespeichert.', // Geändert
                 'alert_paste_blocked': '❌ Einfügen (Paste) ist im Test nicht erlaubt!',
-                'alert_finished': (wpm, accuracy, mistakes) => `🎉 Test beendet!\n\nDein Ergebnis:\n  WPM: ${wpm}\n  Genauigkeit: ${accuracy}\n  Gemachte Fehler: ${mistakes}`,
+                'leaderboard_title': '🏆 Lokale Bestenliste (Top 10)', // NEU
+                'lb_rank': 'Platz', 'lb_wpm': 'WPM', 'lb_acc': 'Genauigkeit', 'lb_diff': 'Kategorie', 'lb_date': 'Datum', // NEU
                 'sampleTexts': {
                     short: ["HTML, CSS und JavaScript bilden das Fundament des modernen World Wide Web. HTML für die Struktur, CSS für das Design und JavaScript für die Interaktivität und Logik.", "Die beste Methode, um seine Tippgeschwindigkeit zu verbessern, ist die tägliche Konzentration auf genaue Eingaben und das Vermeiden von Fehlern."],
                     long: ["Programmieren lernen ist wie eine neue Sprache zu lernen. Es erfordert Geduld, Übung und das Verstehen von grundlegenden Regeln, um am Ende komplexe Anwendungen erstellen zu können, welche die Nutzer begeistern sollen.", "Die kontinuierliche Integration und kontinuierliche Bereitstellung sind moderne Softwareentwicklungspraktiken, die darauf abzielen, den Prozess der Freigabe neuer Software-Updates zu beschleunigen."],
@@ -227,15 +287,17 @@
                 'new_text': 'New Text / Restart',
                 'info_ready': 'Ready to start!',
                 'info_loaded': (category) => `Text (${category}) loaded.`,
-                'info_finished': 'Done! Click "Restart" for a new challenge.',
+                'info_finished': '🎉 Test finished! Your score has been saved.', // Geändert
                 'alert_paste_blocked': '❌ Pasting is not allowed in the test!',
-                'alert_finished': (wpm, accuracy, mistakes) => `🎉 Test finished!\n\nYour result:\n  WPM: ${wpm}\n  Accuracy: ${accuracy}\n  Mistakes: ${mistakes}`,
+                'leaderboard_title': '🏆 Local Leaderboard (Top 10)', // NEU
+                'lb_rank': 'Rank', 'lb_wpm': 'WPM', 'lb_acc': 'Accuracy', 'lb_diff': 'Category', 'lb_date': 'Date', // NEU
                 'sampleTexts': {
                     short: ["HTML, CSS, and JavaScript form the foundation of the modern World Wide Web. HTML for structure, CSS for design, and JavaScript for interactivity and logic.", "The best way to improve typing speed is daily focus on accuracy and avoiding mistakes, rather than just focusing on pure speed."],
                     long: ["Learning to program is like learning a new language. It requires patience, practice, and understanding basic rules to eventually build complex applications that users will love.", "Continuous integration and continuous delivery are modern software development practices aiming to accelerate the release process while minimizing the error rate, which is essential for large teams."],
                     tech: ["function greet(name) { console.log(`Hello, ${name}!`); } greet('World'); // The function is called.", "if (x === true && y != 0) { return x / (y * 2); } else { throw new Error('Invalid input'); }"]
                 }
             },
+            // ... (Fügen Sie hier die Übersetzungen für FR, ES, IT ein, inklusive der neuen 'leaderboard_title' und 'lb_' Keys) ...
             'fr': {
                 'app_title': 'Entraîneur de Vitesse de Frappe',
                 'title': '🚀 Défi de Dactylographie',
@@ -249,9 +311,10 @@
                 'new_text': 'Nouveau Texte / Redémarrer',
                 'info_ready': 'Prêt à commencer !',
                 'info_loaded': (category) => `Texte (${category}) chargé.`,
-                'info_finished': 'Terminé ! Cliquez sur "Redémarrer" pour un nouveau défi.',
+                'info_finished': '🎉 Test terminé ! Votre score a été enregistré.',
                 'alert_paste_blocked': '❌ Le collage (Coller) n\'est pas autorisé dans le test !',
-                'alert_finished': (wpm, accuracy, mistakes) => `🎉 Test terminé !\n\nVotre résultat:\n  MPM: ${wpm}\n  Précision: ${accuracy}\n  Erreurs commises: ${mistakes}`,
+                'leaderboard_title': '🏆 Classement Local (Top 10)',
+                'lb_rank': 'Rang', 'lb_wpm': 'MPM', 'lb_acc': 'Précision', 'lb_diff': 'Catégorie', 'lb_date': 'Date',
                 'sampleTexts': {
                     short: ["HTML, CSS et JavaScript forment la base du World Wide Web moderne. HTML pour la structure, CSS pour le design et JavaScript pour l'interactivité et la logique.", "La meilleure façon d'améliorer la vitesse de frappe est de se concentrer quotidiennement sur la précision et d'éviter les erreurs, plutôt que sur la vitesse pure."],
                     long: ["Apprendre à programmer, c'est comme apprendre une nouvelle langue. Cela demande de la patience, de la pratique et la compréhension des règles de base pour pouvoir construire des applications complexes.", "L'intégration et la livraison continues sont des pratiques de développement logiciel modernes visant à accélérer le processus de publication tout en minimisant le taux d'erreur, ce qui est essentiel pour les grandes équipes."],
@@ -271,16 +334,16 @@
                 'new_text': 'Nuevo Texto / Reiniciar',
                 'info_ready': '¡Listo para empezar!',
                 'info_loaded': (category) => `Texto (${category}) cargado.`,
-                'info_finished': '¡Terminado! Haz clic en "Reiniciar" para un nuevo desafío.',
+                'info_finished': '🎉 ¡Prueba terminada! Tu puntuación ha sido guardada.',
                 'alert_paste_blocked': '❌ ¡Pegar no está permitido en la prueba!',
-                'alert_finished': (wpm, accuracy, mistakes) => `🎉 ¡Prueba terminada!\n\nTu resultado:\n  PPM: ${wpm}\n  Precisión: ${accuracy}\n  Errores cometidos: ${mistakes}`,
+                'leaderboard_title': '🏆 Clasificación Local (Top 10)',
+                'lb_rank': 'Puesto', 'lb_wpm': 'PPM', 'lb_acc': 'Precisión', 'lb_diff': 'Categoría', 'lb_date': 'Fecha',
                 'sampleTexts': {
                     short: ["HTML, CSS y JavaScript forman la base de la World Wide Web moderna. HTML para la estructura, CSS para el diseño y JavaScript para la interactividad y lógica.", "La mejor manera de mejorar la velocidad de escritura es la concentración diaria en la precisión y evitar errores, en lugar de centrarse solo en la velocidad pura."],
                     long: ["Aprender a programar es como aprender un nuevo idioma. Requiere paciencia, práctica y comprensión de las reglas básicas para construir aplicaciones complejas que gustarán a los usuarios.", "La integración continua y la entrega continua son prácticas modernas de desarrollo de software que buscan acelerar el proceso de lanzamiento de software minimizando la tasa de error, esencial para grandes equipos."],
                     tech: ["function saludar(nombre) { console.log(`Hola, ${nombre}!`); } saludar('Mundo'); // La función es llamada.", "if (x === verdadero && y != 0) { return x / (y * 2); } else { throw new Error('Entrada inválida'); }"]
                 }
             },
-            // NEUE SPRACHE: ITALIENISCH (it)
             'it': {
                 'app_title': 'Trainer di Velocità di Battitura',
                 'title': '🚀 Sfida di Battitura',
@@ -294,27 +357,28 @@
                 'new_text': 'Nuovo Testo / Riavvia',
                 'info_ready': 'Pronto per iniziare!',
                 'info_loaded': (category) => `Testo (${category}) caricato.`,
-                'info_finished': 'Fatto! Clicca "Riavvia" per una nuova sfida.',
+                'info_finished': '🎉 Test terminato! Il tuo punteggio è stato salvato.',
                 'alert_paste_blocked': '❌ Incollare non è consentito nel test!',
-                'alert_finished': (wpm, accuracy, mistakes) => `🎉 Test terminato!\n\nIl tuo risultato:\n  PPM: ${wpm}\n  Precisione: ${accuracy}\n  Errori commessi: ${mistakes}`,
+                'leaderboard_title': '🏆 Classifica Locale (Top 10)',
+                'lb_rank': 'Posizione', 'lb_wpm': 'PPM', 'lb_acc': 'Precisione', 'lb_diff': 'Categoria', 'lb_date': 'Data',
                 'sampleTexts': {
                     short: ["HTML, CSS e JavaScript costituiscono le fondamenta del World Wide Web moderno. HTML per la struttura, CSS per il design e JavaScript per l'interattività e la logica.", "Il modo migliore per migliorare la velocità di battitura è la concentrazione quotidiana sulla precisione e l'evitare errori, piuttosto che concentrarsi sulla velocità pura."],
                     long: ["Imparare a programmare è come imparare una nuova lingua. Richiede pazienza, pratica e comprensione delle regole di base per costruire applicazioni complesse che piaceranno agli utenti.", "L'integrazione continua e la consegna continua sono pratiche di sviluppo software moderno volte ad accelerare il processo di rilascio minimizzando il tasso di errore, essenziale per i grandi team."],
                     tech: ["function saluta(nome) { console.log(`Ciao, ${nome}!`); } saluta('Mondo'); // La funzione viene chiamata.", "if (x === vero && y != 0) { return x / (y * 2); } else { throw new Error('Input non valido'); }"]
                 }
             }
-            // HIER KÖNNEN DIE RESTLICHEN SPRACHEN FOLGEN
         };
 
+
         let currentText = '';
-        let timer = null;
         let startTime = 0;
         let correctTypedCharacters = 0; 
         let totalTypedCharacters = 0;   
         let errorsMadeCount = 0;        
         let isRunning = false;
 
-        // --- Automatisches Spracherkennung und Laden ---
+
+        // --- Internationalisierung und UI-Update (Unverändert) ---
 
         function getPreferredLanguage() {
             const browserLang = (navigator.language || navigator.userLanguage).substring(0, 2);
@@ -338,15 +402,93 @@
                     } else if (element.tagName === 'TITLE') {
                         document.title = translation;
                     } else if (element.tagName === 'OPTION') {
-                        element.textContent = translation;
+                        // Da OPTIONS auch als Kategorie-Beschriftung dienen
+                        element.textContent = translation; 
                     } else if (typeof translation === 'string') {
                         element.textContent = translation;
                     }
                 }
             });
 
+            // Setze die Auswahl und rendere Leaderboard neu (wegen übersetzter Spaltennamen)
             languageSelect.value = langCode;
+            renderLeaderboard(); 
             startTest();
+        }
+
+        // --- Leaderboard Funktionen NEU ---
+
+        function loadLeaderboard() {
+            // Holt die gespeicherten Scores oder ein leeres Array
+            const scores = localStorage.getItem('typingScores');
+            return scores ? JSON.parse(scores) : [];
+        }
+
+        function saveScore(wpm, accuracy, difficulty) {
+            const scores = loadLeaderboard();
+            const date = new Date().toLocaleDateString(currentLang);
+            const difficultyText = difficultySelect.options[difficultySelect.selectedIndex].textContent;
+            
+            // Füge neuen Score hinzu
+            scores.push({ wpm, accuracy, difficulty: difficultyText, date });
+
+            // Sortiere nach WPM (absteigend) und dann nach Genauigkeit (absteigend)
+            scores.sort((a, b) => {
+                if (b.wpm !== a.wpm) {
+                    return b.wpm - a.wpm;
+                }
+                return b.accuracy - a.accuracy;
+            });
+
+            // Behalte nur die Top 10
+            const topScores = scores.slice(0, 10);
+            
+            // Speichere zurück in localStorage
+            localStorage.setItem('typingScores', JSON.stringify(topScores));
+
+            renderLeaderboard(wpm, accuracy);
+        }
+        
+        function renderLeaderboard(newWpm = 0, newAccuracy = 0) {
+            const scores = loadLeaderboard();
+            const langData = translations[currentLang] || translations['en'];
+
+            // Header-Zeile erstellen
+            let html = `
+                <thead>
+                    <tr>
+                        <th data-translate-key="lb_rank">${langData.lb_rank}</th>
+                        <th data-translate-key="lb_wpm">${langData.lb_wpm}</th>
+                        <th data-translate-key="lb_acc">${langData.lb_acc}</th>
+                        <th data-translate-key="lb_diff">${langData.lb_diff}</th>
+                        <th data-translate-key="lb_date">${langData.lb_date}</th>
+                    </tr>
+                </thead>
+                <tbody>
+            `;
+
+            // Datenzeilen erstellen
+            scores.forEach((score, index) => {
+                const isNewScore = score.wpm === newWpm && score.accuracy === newAccuracy && index < 10;
+                let rowClass = '';
+                if (index === 0) rowClass = 'place-1';
+                else if (index === 1) rowClass = 'place-2';
+                else if (index === 2) rowClass = 'place-3';
+                else if (isNewScore) rowClass = 'new-score-highlight'; // Optionales Highlighting
+
+                html += `
+                    <tr class="${rowClass}">
+                        <td>${index + 1}</td>
+                        <td>${score.wpm}</td>
+                        <td>${score.accuracy}%</td>
+                        <td>${score.difficulty}</td>
+                        <td>${score.date}</td>
+                    </tr>
+                `;
+            });
+            
+            html += `</tbody>`;
+            leaderboardTable.innerHTML = html;
         }
 
         // --- Setup und Start ---
@@ -386,11 +528,18 @@
             inputField.value = '';
             inputField.disabled = false;
             inputField.focus();
+            
+            // Setze WPM/Genauigkeit auf 0 zurück (wird durch loadLanguage / renderLeaderboard mit aufgerufen)
+            updateMetrics(false); 
 
             loadText(); 
+            // FIX: WPM-Update-Intervall neu starten
+            timer = setInterval(() => {
+                if (isRunning) updateMetrics(true); 
+            }, 100); 
         }
 
-        // --- Anti-Copy-Paste-Schutz (Angepasst für i18n) ---
+        // --- Anti-Copy-Paste-Schutz (Unverändert) ---
         inputField.addEventListener('paste', (e) => {
             e.preventDefault();
             const langData = translations[currentLang] || translations['en'];
@@ -421,9 +570,7 @@
             if (!isRunning) {
                 isRunning = true;
                 startTime = Date.now();
-                timer = setInterval(() => {
-                    if (isRunning) updateMetrics(true); 
-                }, 100); 
+                // Der Timer für WPM läuft jetzt schon, wird aber neu gestartet, wenn der Test startet (siehe startTest())
             }
 
             const input = inputField.value;
@@ -461,23 +608,29 @@
             
             updateMetrics(false); 
 
+            // --- Test beenden ---
             if (newLength === currentText.length) {
                 inputField.disabled = true;
                 clearInterval(timer);
                 isRunning = false;
                 
                 const langData = translations[currentLang] || translations['en'];
-                infoMessage.textContent = langData.info_finished;
+                infoMessage.textContent = langData.info_finished; // NEU: Kein Alert
 
-                const finalAccuracy = accuracyDisplay.textContent;
-                const finalWPM = wpmDisplay.textContent;
-
-                alert(langData.alert_finished(finalWPM, finalAccuracy, errorsMadeCount));
+                // Speichere den Score und render das Leaderboard neu
+                const finalAccuracy = parseInt(accuracyDisplay.textContent.replace('%', ''));
+                const finalWPM = parseInt(wpmDisplay.textContent);
+                const difficulty = difficultySelect.value;
+                
+                saveScore(finalWPM, finalAccuracy, difficulty);
             }
         });
 
-        // --- Metriken Berechnung ---
+        // --- Metriken Berechnung (Unverändert) ---
         function updateMetrics(onlyTime = false) {
+            // FIX: Prüfe auf startTime > 0, um Division durch Null zu vermeiden
+            if (startTime === 0) return;
+            
             const timeElapsedInSeconds = (Date.now() - startTime) / 1000;
             
             timeDisplay.textContent = `${timeElapsedInSeconds.toFixed(2)}s`;
@@ -506,6 +659,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             const preferredLang = getPreferredLanguage();
             loadLanguage(preferredLang); 
+            renderLeaderboard(); // Lade und zeige die gespeicherten Scores beim Start
         });
     </script>
 </body>
